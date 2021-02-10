@@ -1,6 +1,10 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+
 import './screens/signin_screen.dart';
+import './services/auth_service.dart';
+import './screens/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,7 +22,16 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: SignInScreen(),
+      home: FutureBuilder(
+        future: AuthMethods().getCurrentUser(),
+        builder: (context, AsyncSnapshot<dynamic> snapshot) {
+          if(snapshot.hasData) {
+            return HomeScreen();
+          } else {
+            return SignInScreen();
+          }
+        },
+      ),
     );
   }
 }
