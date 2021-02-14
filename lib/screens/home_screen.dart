@@ -1,5 +1,7 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
+import '../services/database_service.dart';
 import 'signin_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -9,8 +11,46 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool isSearching = false;
+  Stream userStream;
 
-  TextEditingController searchUsernameEditingController = TextEditingController();
+  TextEditingController searchUsernameEditingController =
+      TextEditingController();
+
+  onSearchButtonClick() async {
+    isSearching = true;
+    setState(() {});
+    userStream = await DatabaseMethods()
+        .getUserByUserName(searchUsernameEditingController.text);
+    setState(() {});
+  }
+
+  Widget searchListUserTile() {
+
+  }
+
+  Widget searchUsersList() {
+    return StreamBuilder(
+      stream: userStream,
+      builder: (context, snapshot) {
+        return snapshot.hasData
+            ? ListView.builder(
+                itemCount: snapshot.data.docs.length,
+                shrinkWrap: true,
+                itemBuilder: (context, index) {
+                  DocumentSnapshot ds = snapshot.data.docs[index];
+                  return ;
+                },
+              )
+            : Center(
+                child: CircularProgressIndicator(),
+              );
+      },
+    );
+  }
+
+  Widget chatRoomList() {
+    return Container();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,8 +126,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         GestureDetector(
                           onTap: () {
-                            isSearching = true;
-                            setState(() {});
+                            if (searchUsernameEditingController.text != "") {
+                              onSearchButtonClick();
+                            }
                           },
                           child: Icon(Icons.search),
                         ),
@@ -96,7 +137,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ],
-            )
+            ),
+            isSearching ? searchUsersList() : chatRoomList(),
           ],
         ),
       ),
