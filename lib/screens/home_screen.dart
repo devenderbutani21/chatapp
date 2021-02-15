@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
+import '../screens/chat_screen.dart';
 import 'signin_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -24,8 +25,42 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() {});
   }
 
-  Widget searchListUserTile() {
-
+  Widget searchListUserTile({String profileUrl, name, username, email}) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              username,
+              name,
+            ),
+          ),
+        );
+      },
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(40.0),
+            child: Image.network(
+              profileUrl,
+              height: 30,
+              width: 30,
+            ),
+          ),
+          SizedBox(
+            width: 12,
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(name),
+              Text(email),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget searchUsersList() {
@@ -38,7 +73,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
                   DocumentSnapshot ds = snapshot.data.docs[index];
-                  return ;
+                  return searchListUserTile(
+                      profileUrl: ds["imgUrl"],
+                      name: ds["name"],
+                      username: ds["username"],
+                      email: ds["email"]);
                 },
               )
             : Center(
