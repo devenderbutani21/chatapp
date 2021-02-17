@@ -1,5 +1,7 @@
-import 'package:chatapp/helperfunctions/sharedpreferences_helper.dart';
+import '../helperfunctions/sharedpreferences_helper.dart';
+import '../services/database_service.dart';
 import 'package:flutter/material.dart';
+import 'package:random_string/random_string.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatWithUsername, name;
@@ -39,11 +41,41 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   addMessage(bool sendClicked) {
-    if(messageTextEditingController.text != "") {
+    if (messageTextEditingController.text != "") {
       String message = messageTextEditingController.text;
 
       var lastMessageTs = DateTime.now();
-      Map<String, Dynamic> messageInfoMap();
+      Map<String, dynamic> messageInfoMap = {
+        "message": message,
+        "sendBy": myUserName,
+        "ts": lastMessageTs,
+        "imgUrl": myProfilePic,
+      };
+
+      // messageId
+      if (messageId == "") {
+        messageId = randomAlphaNumeric(12);
+      }
+
+      DatabaseMethods()
+          .addMessage(chatRoomId, messageId, messageInfoMap)
+          .then((value) {
+        Map<String, dynamic> lastMessageInfoMap = {
+          "lastMessage": message,
+          "lastMessageSendTs": lastMessageTs,
+          "lastMessageSendBy": myUserName,
+        };
+
+        DatabaseMethods().updateLastMessageSend(chatRoomId, lastMessageInfoMap);
+
+        if(sendClicked) {
+          // remove the text in the message input field
+          messageTextEditingController.text = "";
+
+          // make message id blank to get regenerated on next message send
+          messageId = "";
+        }
+      });
     }
   }
 

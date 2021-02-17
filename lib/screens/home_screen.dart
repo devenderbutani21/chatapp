@@ -4,6 +4,8 @@ import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import '../screens/chat_screen.dart';
 import 'signin_screen.dart';
+import '../helperfunctions/sharedpreferences_helper.dart';
+
 
 class HomeScreen extends StatefulWidget {
   @override
@@ -12,10 +14,27 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   bool isSearching = false;
+  String myName, myProfilePic, myUsername, myEmail;
   Stream userStream;
 
   TextEditingController searchUsernameEditingController =
       TextEditingController();
+
+  getChatRoomIdByUsernames(String a, String b) {
+    if (a.substring(0, 1).codeUnitAt(0) > b.substring(0, 1).codeUnitAt(0)) {
+      return "$b\_$a";
+    } else {
+      return "$a\_$b";
+    }
+  }
+
+  getMyInfoFromSharedPreferences() async {
+    myName = await SharedPreferencesHelper().getDisplayName();
+    myProfilePic = await SharedPreferencesHelper().getUserProfilePicUrl();
+    myUsername = await SharedPreferencesHelper().getUserName();
+    myEmail = await SharedPreferencesHelper().getUserEmail();
+    setState(() {});
+  }
 
   onSearchButtonClick() async {
     isSearching = true;
@@ -28,6 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget searchListUserTile({String profileUrl, name, username, email}) {
     return GestureDetector(
       onTap: () {
+        
+        var chatRoomId = getChatRoomIdByUsernames(myUsername, username);
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -89,6 +110,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget chatRoomList() {
     return Container();
+  }
+
+  @override
+  void initState() {
+    getMyInfoFromSharedPreferences();
+    super.initState();
   }
 
   @override
