@@ -6,7 +6,6 @@ import '../screens/chat_screen.dart';
 import 'signin_screen.dart';
 import '../helperfunctions/sharedpreferences_helper.dart';
 
-
 class HomeScreen extends StatefulWidget {
   @override
   _HomeScreenState createState() => _HomeScreenState();
@@ -47,8 +46,16 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget searchListUserTile({String profileUrl, name, username, email}) {
     return GestureDetector(
       onTap: () {
-        
         var chatRoomId = getChatRoomIdByUsernames(myUsername, username);
+        Map<String, dynamic> chatRoomInfoMap = {
+          "users": [myUsername, username]
+        };
+
+        DatabaseMethods().createChatRoom(
+          chatRoomId,
+          chatRoomInfoMap,
+        );
+
         Navigator.push(
           context,
           MaterialPageRoute(

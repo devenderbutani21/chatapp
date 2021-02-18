@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../helperfunctions/sharedpreferences_helper.dart';
 import '../services/database_service.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +19,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   String chatRoomId, messageId = "";
+  Stream messageStream;
   String myName, myProfilePic, myUserName, myEmail;
   TextEditingController messageTextEditingController = TextEditingController();
 
@@ -68,7 +71,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
         DatabaseMethods().updateLastMessageSend(chatRoomId, lastMessageInfoMap);
 
-        if(sendClicked) {
+        if (sendClicked) {
           // remove the text in the message input field
           messageTextEditingController.text = "";
 
@@ -79,7 +82,65 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  getAndSetMessages() async {}
+  Widget chatMessageTile(String message, bool sentByMe) {
+    return Row(
+      mainAxisAlignment: sentByMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+      children: [
+        Container(
+          margin: EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 4,
+          ),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(24.0),
+              bottomRight: sentByMe ? Radius.circular(0) : Radius.circular(24.0),
+              topRight: Radius.circular(24.0),
+              bottomLeft: sentByMe ?  Radius.circular(24.0) : Radius.circular(0),
+            ),
+            color: Colors.blue,
+          ),
+          padding: EdgeInsets.all(16),
+          child: Text(
+            message,
+            style: TextStyle(
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget chatMessages() {
+    return StreamBuilder(
+      stream: messageStream,
+      builder: (context, snapshot) {
+        return snapshot.hasData
+            ? ListView.builder(
+                padding: EdgeInsets.only(
+                  bottom: 70,
+                  top: 16,
+                ),
+                itemCount: snapshot.data.docs.length,
+                reverse: true,
+                itemBuilder: (context, index) {
+                  DocumentSnapshot ds = snapshot.data.docs[index];
+                  return chatMessageTile(
+                      ds["message"], myUserName == ds["sendBy"]);
+                },
+              )
+            : Center(
+                child: CircularProgressIndicator(),
+              );
+      },
+    );
+  }
+
+  getAndSetMessages() async {
+    messageStream = await DatabaseMethods().getChatRoomMessages(chatRoomId);
+    setState(() {});
+  }
 
   doThisOnLaunch() async {
     await getMyInfoFromSharedPreferences();
@@ -101,6 +162,7 @@ class _ChatScreenState extends State<ChatScreen> {
       body: Container(
         child: Stack(
           children: [
+            chatMessages(),
             Container(
               alignment: Alignment.bottomCenter,
               child: Container(
@@ -114,6 +176,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     Expanded(
                       child: TextField(
                         controller: messageTextEditingController,
+                        onChanged: (value) {
+                          addMessage(false);
+                        },
                         style: TextStyle(
                           color: Colors.white,
                         ),
@@ -127,9 +192,14 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                     ),
-                    Icon(
-                      Icons.send,
-                      color: Colors.white,
+                    GestureDetector(
+                      onTap: () {
+                        addMessage(true);
+                      },
+                      child: Icon(
+                        Icons.send,
+                        color: Colors.white,
+                      ),
                     ),
                   ],
                 ),
