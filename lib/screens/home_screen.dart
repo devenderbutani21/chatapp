@@ -14,7 +14,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool isSearching = false;
   String myName, myProfilePic, myUsername, myEmail;
-  Stream userStream;
+  Stream userStream, chatRoomStream;
 
   TextEditingController searchUsernameEditingController =
       TextEditingController();
@@ -116,12 +116,45 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget chatRoomList() {
-    return Container();
+    return StreamBuilder(
+      stream: chatRoomStream,
+      builder: (context, snapshot) {
+        return snapshot.hasData
+            ? ListView.builder(
+                itemCount: snapshot.data.docs.length,
+                shrinkWrap: true,
+                itemBuilder: (context, index) {
+                  DocumentSnapshot ds = snapshot.data.docs[index];
+                  return Text(
+                    ds.id
+                        .replaceAll(
+                          myUsername,
+                          "",
+                        )
+                        .replaceAll("_", ""),
+                  );
+                },
+              )
+            : Center(
+                child: CircularProgressIndicator(),
+              );
+      },
+    );
+  }
+
+  getChatRooms() async {
+    chatRoomStream = await DatabaseMethods().getChatRooms();
+    setState(() {});
+  }
+
+  onScreenLoaded() async {
+    await getMyInfoFromSharedPreferences();
+    getChatRooms();
   }
 
   @override
   void initState() {
-    getMyInfoFromSharedPreferences();
+    onScreenLoaded();
     super.initState();
   }
 
