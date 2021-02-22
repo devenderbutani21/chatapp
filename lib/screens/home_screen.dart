@@ -14,7 +14,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool isSearching = false;
   String myName, myProfilePic, myUsername, myEmail;
-  Stream userStream, chatRoomStream;
+  Stream usersStream, chatRoomStream;
 
   TextEditingController searchUsernameEditingController =
       TextEditingController();
@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   onSearchButtonClick() async {
     isSearching = true;
     setState(() {});
-    userStream = await DatabaseMethods()
+    usersStream = await DatabaseMethods()
         .getUserByUserName(searchUsernameEditingController.text);
     setState(() {});
   }
@@ -93,7 +93,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget searchUsersList() {
     return StreamBuilder(
-      stream: userStream,
+      stream: usersStream,
       builder: (context, snapshot) {
         return snapshot.hasData
             ? ListView.builder(
@@ -104,8 +104,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   return searchListUserTile(
                       profileUrl: ds["imgUrl"],
                       name: ds["name"],
-                      username: ds["username"],
-                      email: ds["email"]);
+                      email: ds["email"],
+                      username: ds["username"]);
                 },
               )
             : Center(
@@ -125,13 +125,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 shrinkWrap: true,
                 itemBuilder: (context, index) {
                   DocumentSnapshot ds = snapshot.data.docs[index];
-                  return Text(
-                    ds.id
-                        .replaceAll(
-                          myUsername,
-                          "",
-                        )
-                        .replaceAll("_", ""),
+                  return ChatRoomListTile(
+                    ds.id,
+                    ds["lastMessage"],
+                    myUsername,
                   );
                 },
               )
@@ -247,6 +244,86 @@ class _HomeScreenState extends State<HomeScreen> {
             isSearching ? searchUsersList() : chatRoomList(),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class ChatRoomListTile extends StatefulWidget {
+  String lastMessage, chatRoomId, myUsername;
+
+  ChatRoomListTile(
+    this.chatRoomId,
+    this.lastMessage,
+    this.myUsername,
+  );
+
+  @override
+  _ChatRoomListTileState createState() => _ChatRoomListTileState();
+}
+
+class _ChatRoomListTileState extends State<ChatRoomListTile> {
+  String profilePicUrl = "", name = "", username = "";
+
+  getThisUserInfo() async {
+    username =
+        widget.chatRoomId.replaceAll(widget.myUsername, "").replaceAll("_", "");
+    QuerySnapshot querySnapshot = await DatabaseMethods().getUserInfo(username);
+    print("something ${querySnapshot.docs[0].id}");
+    name = "${querySnapshot.docs[0]["name"]}";
+    profilePicUrl = "${querySnapshot.docs[0]["imgUrl"]}";
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    getThisUserInfo();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              username,
+              name,
+            ),
+          ),
+        );
+      },
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(30.0),
+            child: Image.network(
+              profilePicUrl,
+              height: 40,
+              width: 40,
+            ),
+          ),
+          SizedBox(
+            width: 12,
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                username,
+                style: TextStyle(
+                  fontSize: 16,
+                ),
+              ),
+              SizedBox(
+                height: 3,
+              ),
+              Text(widget.lastMessage),
+            ],
+          ),
+        ],
       ),
     );
   }
